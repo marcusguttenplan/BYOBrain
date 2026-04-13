@@ -5,71 +5,71 @@ import { readMarkdown, pathExists, now, writeMarkdown } from "../brain.js";
 import { readFile, appendFile } from "node:fs/promises";
 
 export function registerScratchpadTools(
-  server: McpServer,
-  brainDir: string
+    server: McpServer,
+    brainDir: string
 ): void {
-  const scratchpadPath = join(brainDir, "scratchpad.md");
+    const scratchpadPath = join(brainDir, "scratchpad.md");
 
-  // -------------------------------------------------------------------------
-  // read_scratchpad
-  // -------------------------------------------------------------------------
-  server.registerTool(
-    "read_scratchpad",
-    {
-      title: "Read Scratchpad",
-      description: "Read the contents of the brain's scratchpad.",
-      inputSchema: {},
-    },
-    async () => {
-      if (!(await pathExists(scratchpadPath))) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: "Scratchpad is empty (file does not exist). Use init_brain to create it.",
+    // -------------------------------------------------------------------------
+    // read_scratchpad
+    // -------------------------------------------------------------------------
+    server.registerTool(
+        "read_scratchpad",
+        {
+            title: "Read Scratchpad",
+            description: "Read the contents of the brain's scratchpad.",
+            inputSchema: {},
+        },
+        async () => {
+            if (!(await pathExists(scratchpadPath))) {
+                return {
+                    content: [
+                        {
+                            type: "text" as const,
+                            text: "Scratchpad is empty (file does not exist). Use init_brain to create it.",
+                        },
+                    ],
+                };
+            }
+
+            const raw = await readFile(scratchpadPath, "utf-8");
+
+            return {
+                content: [{ type: "text" as const, text: raw }],
+            };
+        }
+    );
+
+    // -------------------------------------------------------------------------
+    // append_scratchpad
+    // -------------------------------------------------------------------------
+    server.registerTool(
+        "append_scratchpad",
+        {
+            title: "Append to Scratchpad",
+            description:
+                "Append a timestamped note to the brain's scratchpad. " +
+                "Notes are automatically prefixed with today's date.",
+            inputSchema: {
+                note: z.string().describe("Note content to append."),
             },
-          ],
-        };
-      }
+        },
+        async ({ note }) => {
+            const { data, content } = await readMarkdown(scratchpadPath);
+            const entry = `\n## [${now()}] Note\n\n${note}\n`;
+            const newContent = content + entry;
+            data.updated = now();
 
-      const raw = await readFile(scratchpadPath, "utf-8");
+            await writeMarkdown(scratchpadPath, data, newContent);
 
-      return {
-        content: [{ type: "text" as const, text: raw }],
-      };
-    }
-  );
-
-  // -------------------------------------------------------------------------
-  // append_scratchpad
-  // -------------------------------------------------------------------------
-  server.registerTool(
-    "append_scratchpad",
-    {
-      title: "Append to Scratchpad",
-      description:
-        "Append a timestamped note to the brain's scratchpad. " +
-        "Notes are automatically prefixed with today's date.",
-      inputSchema: {
-        note: z.string().describe("Note content to append."),
-      },
-    },
-    async ({ note }) => {
-      const { data, content } = await readMarkdown(scratchpadPath);
-      const entry = `\n## [${now()}] Note\n\n${note}\n`;
-      const newContent = content + entry;
-      data.updated = now();
-
-      await writeMarkdown(scratchpadPath, data, newContent);
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Appended note to scratchpad (${now()}).`,
-          },
-        ],
-      };
-    }
-  );
+            return {
+                content: [
+                    {
+                        type: "text" as const,
+                        text: `Appended note to scratchpad (${now()}).`,
+                    },
+                ],
+            };
+        }
+    );
 }
