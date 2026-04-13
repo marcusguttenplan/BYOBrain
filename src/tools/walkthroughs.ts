@@ -7,7 +7,9 @@ import {
   listMarkdownFiles,
   pathExists,
   ensureDir,
+  stableSlug,
   timestampedSlug,
+  findByTitle,
   now,
 } from "../brain.js";
 
@@ -122,10 +124,11 @@ export function registerWalkthroughTools(server: McpServer, brainDir: string): v
       const dir = walkthroughsDir(project);
       await ensureDir(dir);
 
-      const slug = timestampedSlug(title);
+      // Stable slug: find existing by title, or create with date+hour prefix
+      const existingSlug = await findByTitle(dir, title);
+      const slug = existingSlug || stableSlug(title);
       const filePath = join(dir, `${slug}.md`);
-
-      const isUpdate = await pathExists(filePath);
+      const isUpdate = !!existingSlug;
 
       const data: Record<string, unknown> = {
         title,
@@ -136,7 +139,24 @@ export function registerWalkthroughTools(server: McpServer, brainDir: string): v
         data.created = now();
       }
 
-      await writeMarkdown(filePath, data, `\n${body}\n`);
+      // Write with fallback: if locked, create new file with full timestamp
+      try {
+        await writeMarkdown(filePath, data, `\n${body}\n`);
+      } catch {
+        const fallbackSlug = timestampedSlug(title);
+        const fallbackPath = join(dir, `${fallbackSlug}.md`);
+        data.supersedes = slug;
+        await writeMarkdown(fallbackPath, data, `\n${body}\n`);
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Walkthrough written to fallback: ${fallbackSlug} (could not update ${slug})`,
+            },
+          ],
+        };
+      }
 
       return {
         content: [
