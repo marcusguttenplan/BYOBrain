@@ -7,8 +7,8 @@ import {
   listMarkdownFiles,
   pathExists,
   ensureDir,
-  slugify,
-  today,
+  timestampedSlug,
+  now,
 } from "../brain.js";
 
 export function registerIssueTools(server: McpServer, brainDir: string): void {
@@ -169,13 +169,13 @@ export function registerIssueTools(server: McpServer, brainDir: string): void {
       const dir = issuesDir(project);
       await ensureDir(dir);
 
-      const slug = slugify(title);
+      const slug = timestampedSlug(title);
       const filePath = join(dir, `${slug}.md`);
 
       const data: Record<string, unknown> = {
         title,
         status: "open",
-        created: today(),
+        created: now(),
       };
 
       if (severity) {
@@ -231,11 +231,11 @@ export function registerIssueTools(server: McpServer, brainDir: string): void {
       const { data, content } = await readMarkdown(filePath);
 
       data.status = "resolved";
-      data.resolved = today();
+      data.resolved = now();
 
       const updatedContent =
         content.trimEnd() +
-        `\n\n## Resolution (${today()})\n\n${resolution}\n`;
+        `\n\n## Resolution (${now()})\n\n${resolution}\n`;
 
       await writeMarkdown(filePath, data, updatedContent);
 
@@ -243,7 +243,7 @@ export function registerIssueTools(server: McpServer, brainDir: string): void {
         content: [
           {
             type: "text" as const,
-            text: `Issue "${slug}" resolved (${today()}).`,
+            text: `Issue "${slug}" resolved (${now()}).`,
           },
         ],
       };

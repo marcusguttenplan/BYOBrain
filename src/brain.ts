@@ -274,7 +274,35 @@ export function mergeContextSections(
 // Date helpers
 // ---------------------------------------------------------------------------
 
-/** Get today's date as YYYY-MM-DD string. */
-export function today(): string {
-  return new Date().toISOString().split("T")[0];
+/** Get current date as full UTC ISO timestamp. */
+export function now(): string {
+  return new Date().toISOString();
+}
+
+/** Generate a URL-safe slug from a title string, prepended with a UTC timestamp. */
+export function timestampedSlug(title: string): string {
+  const timestamp = now().replace(/[:.]/g, "-").toLowerCase();
+  return slugify(`${timestamp}-${title}`);
+}
+
+/** Generate a stable slug with date+hour prefix (no minutes/seconds). */
+export function stableSlug(title: string): string {
+  const dateHour = now().slice(0, 13).replace(/[:.T]/g, "-").toLowerCase();
+  return slugify(`${dateHour}-${title}`);
+}
+
+/**
+ * Find an existing markdown file in a directory whose frontmatter `title`
+ * matches the given title. Returns the slug (basename without .md) or null.
+ */
+export async function findByTitle(
+  dir: string,
+  title: string
+): Promise<string | null> {
+  const slugs = await listMarkdownFiles(dir);
+  for (const slug of slugs) {
+    const { data } = await readMarkdown(join(dir, `${slug}.md`));
+    if (data.title === title) return slug;
+  }
+  return null;
 }

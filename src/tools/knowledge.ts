@@ -8,7 +8,7 @@ import {
   pathExists,
   ensureDir,
   slugify,
-  today,
+  now,
 } from "../brain.js";
 
 export function registerKnowledgeTools(server: McpServer, brainDir: string): void {
@@ -127,11 +127,11 @@ export function registerKnowledgeTools(server: McpServer, brainDir: string): voi
       const data: Record<string, unknown> = {
         title,
         summary,
-        updated: today(),
+        updated: now(),
       };
 
       if (!isUpdate) {
-        data.created = today();
+        data.created = now();
       }
 
       await writeMarkdown(filePath, data, `\n${body}\n`);
