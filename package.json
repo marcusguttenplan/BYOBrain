@@ -1,0 +1,45 @@
+{
+  "name": "byobrain-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for persistent, cross-agent working memory. BYO brain directory.",
+  "type": "module",
+  "bin": {
+    "byobrain-mcp": "./build/index.js"
+  },
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node build/index.js",
+    "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "ai",
+    "context",
+    "memory",
+    "brain",
+    "obsidian"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marcusguttenplan/byobrain-mcp"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "gray-matter": "^4.0.3",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.1.0"
+  }
+}

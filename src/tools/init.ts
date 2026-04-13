@@ -1,0 +1,266 @@
+import { join } from "node:path";
+import { readFile } from "node:fs/promises";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import {
+  ensureDir,
+  writeMarkdown,
+  readMarkdown,
+  pathExists,
+  today,
+} from "../brain.js";
+
+const BRAIN_README_CONTENT = `# Brain — Working Memory Layer
+
+Cross-agent, cross-IDE operational memory.
+
+## Structure
+
+- \`projects/\` — One directory per active project
+- \`scratchpad.md\` — Short-lived cross-session notes
+
+## Agent Protocol
+
+1. Read \`projects/{project}/context.md\` at conversation start
+2. Update brain files after significant work sessions
+3. Keep context files under 200 lines
+4. Date everything with \`(YYYY-MM-DD)\` prefix
+`;
+
+const SCRATCHPAD_CONTENT = `# Scratchpad
+
+Short-lived notes. Review monthly — promote or delete.
+
+---
+`;
+
+const CONTEXT_TEMPLATE = (project: string) => `# ${project} — Context
+
+## Current State
+
+## Recent Decisions
+
+## Architecture Quick Ref
+`;
+
+export function registerInitTools(server: McpServer, brainDir: string): void {
+  // -------------------------------------------------------------------------
+  // init_brain
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    "init_brain",
+    {
+      title: "Initialize Brain",
+      description:
+        "Create the brain directory structure (README.md, projects/, scratchpad.md). " +
+        "Uses BRAIN_DIR if path is omitted.",
+      inputSchema: {
+        path: z
+          .string()
+          .optional()
+          .describe("Path to create the brain directory. Defaults to BRAIN_DIR."),
+      },
+    },
+    async ({ path }) => {
+      const targetDir = path || brainDir;
+
+      await ensureDir(join(targetDir, "projects"));
+
+      // Write README if it doesn't exist
+      const readmePath = join(targetDir, "README.md");
+      if (!(await pathExists(readmePath))) {
+        await writeMarkdown(
+          readmePath,
+          { title: "Brain — Working Memory Layer", created: today() },
+          BRAIN_README_CONTENT
+        );
+      }
+
+      // Write scratchpad if it doesn't exist
+      const scratchpadPath = join(targetDir, "scratchpad.md");
+      if (!(await pathExists(scratchpadPath))) {
+        await writeMarkdown(
+          scratchpadPath,
+          { title: "Scratchpad", updated: today() },
+          SCRATCHPAD_CONTENT
+        );
+      }
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Brain initialized at ${targetDir}\n\nCreated:\n- README.md\n- projects/\n- scratchpad.md`,
+          },
+        ],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // init_project
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    "init_project",
+    {
+      title: "Initialize Project",
+      description:
+        "Create a project directory with context.md, plans/, and issues/ subdirectories.",
+      inputSchema: {
+        project: z.string().describe("Project name (used as directory name)."),
+      },
+    },
+    async ({ project }) => {
+      const projectDir = join(brainDir, "projects", project);
+
+      await ensureDir(join(projectDir, "plans"));
+      await ensureDir(join(projectDir, "issues"));
+
+      // Write context.md if it doesn't exist
+      const contextPath = join(projectDir, "context.md");
+      if (!(await pathExists(contextPath))) {
+        await writeMarkdown(
+          contextPath,
+          { project, updated: today() },
+          CONTEXT_TEMPLATE(project)
+        );
+      }
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Project "${project}" initialized at ${projectDir}\n\nCreated:\n- context.md\n- plans/\n- issues/`,
+          },
+        ],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // link_repo
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    "link_repo",
+    {
+      title: "Link Repository",
+      description:
+        "Link a repository to the brain. Creates BRAIN.md (config pointer), " +
+        "CLAUDE.md and GEMINI.md (agent instructions), and adds them to .gitignore.",
+      inputSchema: {
+        project: z.string().describe("Project name to link to."),
+        repo_path: z
+          .string()
+          .describe("Absolute path to the repository root."),
+      },
+    },
+    async ({ project, repo_path }) => {
+      const created: string[] = [];
+
+      // --- BRAIN.md ---
+      const brainMdContent = [
+        "# BRAIN.md",
+        `brain_dir: ${brainDir}`,
+        `project: ${project}`,
+        "",
+      ].join("\n");
+      await writeFile(join(repo_path, "BRAIN.md"), brainMdContent, "utf-8");
+      created.push("BRAIN.md");
+
+      // --- Agent instructions template ---
+      const agentInstructions = (agentName: string) =>
+        [
+          `# ${agentName} Agent Instructions — ${project}`,
+          "",
+          "## On Conversation Start",
+          "",
+          "1. Read `BRAIN.md` in this repo root to find the brain directory and project name.",
+          "2. Read `{brain_dir}/projects/{project}/context.md` for current project state, recent decisions, and architecture.",
+          "3. Scan `{brain_dir}/projects/{project}/issues/` for active blockers relevant to the current task.",
+          "4. Check `{brain_dir}/projects/{project}/plans/` for any active implementation plans.",
+          "5. Use this context to avoid re-explaining project state. Jump straight into the work.",
+          "",
+          "## On Conversation End (significant work only)",
+          "",
+          "1. **Update context.md** — Add new decisions, status changes, resolved blockers. Prefix with `(YYYY-MM-DD)`. Keep under 200 lines.",
+          "2. **Create or update plans/** — If an implementation plan was created or modified, save it as `plans/{slug}.md`. Keep under 100 lines.",
+          "3. **Create or resolve issues/** — New blockers → `issues/{slug}.md` with YAML frontmatter. Resolved → set `status: resolved` with resolution notes.",
+          "4. **Append to scratchpad.md** — Short-lived notes, questions, or observations that don't belong in context or issues.",
+          "",
+          "## Rules",
+          "",
+          "- Keep context files under 200 lines. Prune resolved items.",
+          '- Date everything with `(YYYY-MM-DD)` prefix.',
+          '- Be concrete: "gray-matter parsing fails on empty frontmatter" not "some parsing issues."',
+          "- Don't duplicate — link to wiki pages when deeper context is needed.",
+          '- Close issues by setting `status: resolved`, don\'t delete them.',
+          "",
+          "## Brain Location",
+          "",
+          "```",
+          `brain_dir: ${brainDir}`,
+          `project: ${project}`,
+          "```",
+          "",
+        ].join("\n");
+
+      // --- CLAUDE.md ---
+      await writeFile(
+        join(repo_path, "CLAUDE.md"),
+        agentInstructions("Claude"),
+        "utf-8"
+      );
+      created.push("CLAUDE.md");
+
+      // --- GEMINI.md ---
+      await writeFile(
+        join(repo_path, "GEMINI.md"),
+        agentInstructions("Gemini"),
+        "utf-8"
+      );
+      created.push("GEMINI.md");
+
+      // --- Append to .gitignore if needed ---
+      const gitignorePath = join(repo_path, ".gitignore");
+      const ignoreEntries = ["BRAIN.md", "CLAUDE.md", "GEMINI.md"];
+      let gitignoreContent = "";
+      try {
+        gitignoreContent = await readFile(gitignorePath, "utf-8");
+      } catch {
+        // .gitignore doesn't exist yet
+      }
+
+      const missing = ignoreEntries.filter(
+        (entry) => !gitignoreContent.split("\n").includes(entry)
+      );
+
+      if (missing.length > 0) {
+        const appendBlock = [
+          "",
+          "# BYOBrain — per-repo config (generated, contains local paths)",
+          ...missing,
+          "",
+        ].join("\n");
+        await appendFile(gitignorePath, appendBlock, "utf-8");
+        created.push(`.gitignore (added ${missing.join(", ")})`);
+      }
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: [
+              `Linked repo at ${repo_path} to project "${project}"`,
+              "",
+              "Created:",
+              ...created.map((f) => `  - ${f}`),
+            ].join("\n"),
+          },
+        ],
+      };
+    }
+  );
+}
+
+// Need writeFile/readFile/appendFile for link_repo (raw writes, no frontmatter)
+import { writeFile, appendFile } from "node:fs/promises";
