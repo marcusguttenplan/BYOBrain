@@ -1,6 +1,6 @@
 import { readFile, writeFile, readdir, mkdir, access } from "node:fs/promises";
 import { join, basename } from "node:path";
-import matter from "gray-matter";
+import { parse as yamlParse, stringify as yamlStringify } from "yaml";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
@@ -60,7 +60,7 @@ export async function parseBrainMd(
   // Try frontmatter first, fall back to line-by-line parsing
   let fields: Record<string, unknown>;
 
-  const parsed = matter(raw);
+  const parsed = parseMatter(raw);
   if (Object.keys(parsed.data).length > 0) {
     fields = parsed.data;
   } else {
@@ -139,11 +139,31 @@ export interface MarkdownFile {
   content: string;
 }
 
+const FRONTMATTER_REGEX = /^\s*---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
+
+export function parseMatter(raw: string): MarkdownFile {
+  const match = raw.match(FRONTMATTER_REGEX);
+  if (match) {
+    try {
+      const data = yamlParse(match[1]);
+      return { data: typeof data === "object" && data !== null ? data : {}, content: match[2] };
+    } catch {
+      return { data: {}, content: raw };
+    }
+  }
+  return { data: {}, content: raw };
+}
+
+export function stringifyMatter(content: string, data: Record<string, unknown>): string {
+  if (!data || Object.keys(data).length === 0) return content;
+  const yamlString = yamlStringify(data).trim();
+  return `---\n${yamlString}\n---\n${content}`;
+}
+
 /** Read a markdown file and parse its YAML frontmatter. */
 export async function readMarkdown(filePath: string): Promise<MarkdownFile> {
   const raw = await readFile(filePath, "utf-8");
-  const { data, content } = matter(raw);
-  return { data, content };
+  return parseMatter(raw);
 }
 
 /** Write a markdown file with YAML frontmatter. */
@@ -152,7 +172,7 @@ export async function writeMarkdown(
   data: Record<string, unknown>,
   content: string
 ): Promise<void> {
-  const output = matter.stringify(content, data);
+  const output = stringifyMatter(content, data);
   await writeFile(filePath, output, "utf-8");
 }
 

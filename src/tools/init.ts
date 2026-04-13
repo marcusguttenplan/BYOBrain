@@ -276,7 +276,7 @@ export function registerInitTools(server: McpServer, brainDir: string): void {
                     "- **Telegraphic**: Omit pleasantries. Use abbreviations.",
                     "- **Offload**: Never inline large logs. Save to scratchpad/KIs, reference by path.",
                     "- **Size Limits**: context.md under 200 lines. Prune resolved items.",
-                    '- **Concrete**: "gray-matter parsing fails on empty frontmatter" not "some parsing issues."',
+                    '- **Concrete**: "yaml parsing fails on empty frontmatter" not "some parsing issues."',
                     "- **References**: Don't duplicate — link to brain URIs or wiki pages.",
                     "- **\"Don't forget\" = permanent rule**: If the user says \"don't forget\", \"remember to\",",
                     "  or any correction implying a recurring mistake, **immediately** save it as a Knowledge Item",

@@ -131,7 +131,7 @@ brain/
 |------|-------------|
 | `init_brain` | Create brain directory structure |
 | `init_project` | Create a project with context.md, plans/, issues/ |
-| `link_repo` | Drop a BRAIN.md pointer into a repository |
+| `link_repo` | Link repo to brain (creates BRAIN.md and agent instructions) |
 | `read_context` | Read a project's context.md |
 | `update_context` | Section-level merge into context.md |
 | `list_issues` | List issues (skips resolved by default) |
@@ -189,7 +189,7 @@ brain_dir: /path/to/brain
 project: myapp
 ```
 
-The `link_repo` tool creates this file for you.
+The `link_repo` tool creates this file for you, along with tailored `CLAUDE.md` and `GEMINI.md` agent instructions to strictly enforce the brain's data schemas and frugal write protocols.
 
 `BRAIN.md` fields are validated with a strict schema:
 
