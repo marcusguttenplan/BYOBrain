@@ -7,8 +7,8 @@ import {
   listMarkdownFiles,
   pathExists,
   ensureDir,
-  slugify,
-  today,
+  timestampedSlug,
+  now,
 } from "../brain.js";
 
 export function registerTaskTools(server: McpServer, brainDir: string): void {
@@ -145,7 +145,7 @@ export function registerTaskTools(server: McpServer, brainDir: string): void {
       const dir = tasksDir(project);
       await ensureDir(dir);
 
-      const slug = slugify(title);
+      const slug = timestampedSlug(title);
       const filePath = join(dir, `${slug}.md`);
 
       const isUpdate = await pathExists(filePath);
@@ -153,11 +153,11 @@ export function registerTaskTools(server: McpServer, brainDir: string): void {
       const data: Record<string, unknown> = {
         title,
         status: status || "active",
-        updated: today(),
+        updated: now(),
       };
 
       if (!isUpdate) {
-        data.created = today();
+        data.created = now();
       }
 
       await writeMarkdown(filePath, data, `\n${body}\n`);

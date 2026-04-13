@@ -274,7 +274,13 @@ export function mergeContextSections(
 // Date helpers
 // ---------------------------------------------------------------------------
 
-/** Get today's date as YYYY-MM-DD string. */
-export function today(): string {
-  return new Date().toISOString().split("T")[0];
+/** Get current date as full UTC ISO timestamp. */
+export function now(): string {
+  return new Date().toISOString();
+}
+
+/** Generate a URL-safe slug from a title string, prepended with a UTC timestamp. */
+export function timestampedSlug(title: string): string {
+  const timestamp = now().replace(/[:.]/g, "-").toLowerCase();
+  return slugify(`${timestamp}-${title}`);
 }

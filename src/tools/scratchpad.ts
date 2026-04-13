@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { readMarkdown, pathExists, today } from "../brain.js";
+import { readMarkdown, pathExists, now, writeMarkdown } from "../brain.js";
 import { readFile, appendFile } from "node:fs/promises";
 
 export function registerScratchpadTools(
@@ -55,15 +55,18 @@ export function registerScratchpadTools(
       },
     },
     async ({ note }) => {
-      const entry = `\n## [${today()}] Note\n\n${note}\n`;
+      const { data, content } = await readMarkdown(scratchpadPath);
+      const entry = `\n## [${now()}] Note\n\n${note}\n`;
+      const newContent = content + entry;
+      data.updated = now();
 
-      await appendFile(scratchpadPath, entry, "utf-8");
+      await writeMarkdown(scratchpadPath, data, newContent);
 
       return {
         content: [
           {
             type: "text" as const,
-            text: `Appended note to scratchpad (${today()}).`,
+            text: `Appended note to scratchpad (${now()}).`,
           },
         ],
       };

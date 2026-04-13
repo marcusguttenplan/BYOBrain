@@ -8,7 +8,7 @@ import {
   pathExists,
   ensureDir,
   slugify,
-  today,
+  now,
 } from "../brain.js";
 
 export function registerCommandTools(server: McpServer, brainDir: string): void {
@@ -106,9 +106,9 @@ export function registerCommandTools(server: McpServer, brainDir: string): void 
 
       const data: Record<string, unknown> = {
         title,
-        updated: today(),
+        updated: now(),
       };
-      if (!isUpdate) data.created = today();
+      if (!isUpdate) data.created = now();
 
       // Ensure formatting stability
       const body = `\n\`\`\`bash\n${command_string.trim()}\n\`\`\`\n`;

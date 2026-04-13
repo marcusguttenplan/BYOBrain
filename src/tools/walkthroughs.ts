@@ -7,8 +7,8 @@ import {
   listMarkdownFiles,
   pathExists,
   ensureDir,
-  slugify,
-  today,
+  timestampedSlug,
+  now,
 } from "../brain.js";
 
 export function registerWalkthroughTools(server: McpServer, brainDir: string): void {
@@ -122,18 +122,18 @@ export function registerWalkthroughTools(server: McpServer, brainDir: string): v
       const dir = walkthroughsDir(project);
       await ensureDir(dir);
 
-      const slug = slugify(title);
+      const slug = timestampedSlug(title);
       const filePath = join(dir, `${slug}.md`);
 
       const isUpdate = await pathExists(filePath);
 
       const data: Record<string, unknown> = {
         title,
-        updated: today(),
+        updated: now(),
       };
 
       if (!isUpdate) {
-        data.created = today();
+        data.created = now();
       }
 
       await writeMarkdown(filePath, data, `\n${body}\n`);

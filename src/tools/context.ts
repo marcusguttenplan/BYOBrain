@@ -6,7 +6,7 @@ import {
   writeMarkdown,
   mergeContextSections,
   pathExists,
-  today,
+  now,
 } from "../brain.js";
 
 export function registerContextTools(
@@ -98,16 +98,21 @@ export function registerContextTools(
       const { data, content } = await readMarkdown(contextPath);
       const merged = mergeContextSections(content, updates);
 
-      // Update the frontmatter date
-      data.updated = today();
+      const updatesSection = updates;
 
-      await writeMarkdown(contextPath, data, merged);
+      data.updated = now();
+
+      await writeMarkdown(
+        contextPath,
+        data,
+        mergeContextSections(content, updatesSection)
+      );
 
       return {
         content: [
           {
             type: "text" as const,
-            text: `Context updated for "${project}" (${today()}).`,
+            text: `Context updated for "${project}" (${now()}).`,
           },
         ],
       };
