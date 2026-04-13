@@ -266,4 +266,284 @@ export function registerResources(server: McpServer, brainDir: string): void {
       };
     }
   );
+
+  // -------------------------------------------------------------------------
+  // byobrain://knowledge — Knowledge index
+  // -------------------------------------------------------------------------
+  server.registerResource(
+    "knowledge-index",
+    "byobrain://knowledge",
+    {
+      title: "Knowledge Index",
+      description: "Index of global knowledge items.",
+      mimeType: "text/markdown",
+    },
+    async (uri) => {
+      const dir = join(brainDir, "knowledge");
+      const slugs = await listMarkdownFiles(dir);
+
+      if (slugs.length === 0) {
+        return {
+          contents: [
+            { uri: uri.href, text: "No knowledge items found." },
+          ],
+        };
+      }
+
+      const lines: string[] = [];
+      for (const slug of slugs) {
+        const { data } = await readMarkdown(join(dir, `${slug}.md`));
+        lines.push(`- **${slug}**: ${data.summary || slug}`);
+      }
+
+      return {
+        contents: [{ uri: uri.href, text: lines.join("\n") }],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // byobrain://knowledge/{slug} — Single knowledge item
+  // -------------------------------------------------------------------------
+  server.registerResource(
+    "knowledge-item",
+    new ResourceTemplate("byobrain://knowledge/{slug}", {
+      list: undefined,
+    }),
+    {
+      title: "Knowledge Item",
+      description: "A single knowledge item's full content.",
+      mimeType: "text/markdown",
+    },
+    async (uri, params) => {
+      const slug = params.slug as string;
+      const filePath = join(brainDir, "knowledge", `${slug}.md`);
+
+      if (!(await pathExists(filePath))) {
+        return {
+          contents: [
+            { uri: uri.href, text: `Knowledge item "${slug}" not found.` },
+          ],
+        };
+      }
+
+      const raw = await readFile(filePath, "utf-8");
+      return {
+        contents: [{ uri: uri.href, text: raw }],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // byobrain://projects/{project}/tasks — Task index
+  // -------------------------------------------------------------------------
+  server.registerResource(
+    "project-tasks",
+    new ResourceTemplate("byobrain://projects/{project}/tasks", {
+      list: undefined,
+    }),
+    {
+      title: "Project Tasks",
+      description: "Index of task checklists for a project.",
+      mimeType: "text/markdown",
+    },
+    async (uri, params) => {
+      const project = params.project as string;
+      const dir = join(brainDir, "projects", project, "tasks");
+      const slugs = await listMarkdownFiles(dir);
+
+      if (slugs.length === 0) {
+        return {
+          contents: [
+            { uri: uri.href, text: `No tasks for project "${project}".` },
+          ],
+        };
+      }
+
+      const lines: string[] = [];
+      for (const slug of slugs) {
+        const { data } = await readMarkdown(join(dir, `${slug}.md`));
+        const status = (data.status as string) || "active";
+        lines.push(`- **${slug}** (${status}): ${data.title || slug}`);
+      }
+
+      return {
+        contents: [{ uri: uri.href, text: lines.join("\n") }],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // byobrain://projects/{project}/tasks/{slug} — Single task list
+  // -------------------------------------------------------------------------
+  server.registerResource(
+    "project-task",
+    new ResourceTemplate("byobrain://projects/{project}/tasks/{slug}", {
+      list: undefined,
+    }),
+    {
+      title: "Project Task",
+      description: "A single task document's full content.",
+      mimeType: "text/markdown",
+    },
+    async (uri, params) => {
+      const project = params.project as string;
+      const slug = params.slug as string;
+      const filePath = join(brainDir, "projects", project, "tasks", `${slug}.md`);
+
+      if (!(await pathExists(filePath))) {
+        return {
+          contents: [
+            { uri: uri.href, text: `Task "${slug}" not found.` },
+          ],
+        };
+      }
+
+      const raw = await readFile(filePath, "utf-8");
+      return {
+        contents: [{ uri: uri.href, text: raw }],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // byobrain://projects/{project}/walkthroughs — Walkthrough index
+  // -------------------------------------------------------------------------
+  server.registerResource(
+    "project-walkthroughs",
+    new ResourceTemplate("byobrain://projects/{project}/walkthroughs", {
+      list: undefined,
+    }),
+    {
+      title: "Project Walkthroughs",
+      description: "Index of walkthroughs for a project.",
+      mimeType: "text/markdown",
+    },
+    async (uri, params) => {
+      const project = params.project as string;
+      const dir = join(brainDir, "projects", project, "walkthroughs");
+      const slugs = await listMarkdownFiles(dir);
+
+      if (slugs.length === 0) {
+        return {
+          contents: [
+            { uri: uri.href, text: `No walkthroughs for project "${project}".` },
+          ],
+        };
+      }
+
+      const lines: string[] = [];
+      for (const slug of slugs) {
+        const { data } = await readMarkdown(join(dir, `${slug}.md`));
+        lines.push(`- **${slug}**: ${data.title || slug}`);
+      }
+
+      return {
+        contents: [{ uri: uri.href, text: lines.join("\n") }],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // byobrain://projects/{project}/walkthroughs/{slug} — Single walkthrough
+  // -------------------------------------------------------------------------
+  server.registerResource(
+    "project-walkthrough",
+    new ResourceTemplate("byobrain://projects/{project}/walkthroughs/{slug}", {
+      list: undefined,
+    }),
+    {
+      title: "Project Walkthrough",
+      description: "A single walkthrough document's full content.",
+      mimeType: "text/markdown",
+    },
+    async (uri, params) => {
+      const project = params.project as string;
+      const slug = params.slug as string;
+      const filePath = join(brainDir, "projects", project, "walkthroughs", `${slug}.md`);
+
+      if (!(await pathExists(filePath))) {
+        return {
+          contents: [
+            { uri: uri.href, text: `Walkthrough "${slug}" not found.` },
+          ],
+        };
+      }
+
+      const raw = await readFile(filePath, "utf-8");
+      return {
+        contents: [{ uri: uri.href, text: raw }],
+      };
+    }
+  );
+  // -------------------------------------------------------------------------
+  // byobrain://projects/{project}/commands — Commands index
+  // -------------------------------------------------------------------------
+  server.registerResource(
+    "project-commands",
+    new ResourceTemplate("byobrain://projects/{project}/commands", {
+      list: undefined,
+    }),
+    {
+      title: "Project Commands",
+      description: "Index of command snippets for a project.",
+      mimeType: "text/markdown",
+    },
+    async (uri, params) => {
+      const project = params.project as string;
+      const dir = join(brainDir, "projects", project, "commands");
+      const slugs = await listMarkdownFiles(dir);
+
+      if (slugs.length === 0) {
+        return {
+          contents: [
+            { uri: uri.href, text: `No commands for project "${project}".` },
+          ],
+        };
+      }
+
+      const lines: string[] = [];
+      for (const slug of slugs) {
+        const { data } = await readMarkdown(join(dir, `${slug}.md`));
+        lines.push(`- **${slug}**: ${data.title || slug}`);
+      }
+
+      return {
+        contents: [{ uri: uri.href, text: lines.join("\n") }],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // byobrain://projects/{project}/commands/{slug} — Single command
+  // -------------------------------------------------------------------------
+  server.registerResource(
+    "project-command",
+    new ResourceTemplate("byobrain://projects/{project}/commands/{slug}", {
+      list: undefined,
+    }),
+    {
+      title: "Project Command",
+      description: "A single command document's full content.",
+      mimeType: "text/markdown",
+    },
+    async (uri, params) => {
+      const project = params.project as string;
+      const slug = params.slug as string;
+      const filePath = join(brainDir, "projects", project, "commands", `${slug}.md`);
+
+      if (!(await pathExists(filePath))) {
+        return {
+          contents: [
+            { uri: uri.href, text: `Command "${slug}" not found.` },
+          ],
+        };
+      }
+
+      const raw = await readFile(filePath, "utf-8");
+      return {
+        contents: [{ uri: uri.href, text: raw }],
+      };
+    }
+  );
 }

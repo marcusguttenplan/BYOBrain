@@ -8,6 +8,10 @@ import { registerInitTools } from "./tools/init.js";
 import { registerContextTools } from "./tools/context.js";
 import { registerIssueTools } from "./tools/issues.js";
 import { registerPlanTools } from "./tools/plans.js";
+import { registerTaskTools } from "./tools/tasks.js";
+import { registerWalkthroughTools } from "./tools/walkthroughs.js";
+import { registerCommandTools } from "./tools/commands.js";
+import { registerKnowledgeTools } from "./tools/knowledge.js";
 import { registerScratchpadTools } from "./tools/scratchpad.js";
 import { registerResources } from "./resources.js";
 import { registerPrompts } from "./prompts.js";
@@ -30,7 +34,7 @@ async function main(): Promise<void> {
   // Create MCP server
   const server = new McpServer({
     name: "byobrain-mcp",
-    version: "0.1.0",
+    version: "0.2.0",
   });
 
   // Register all tools
@@ -38,6 +42,10 @@ async function main(): Promise<void> {
   registerContextTools(server, brainDir);
   registerIssueTools(server, brainDir);
   registerPlanTools(server, brainDir);
+  registerTaskTools(server, brainDir);
+  registerWalkthroughTools(server, brainDir);
+  registerCommandTools(server, brainDir);
+  registerKnowledgeTools(server, brainDir);
   registerScratchpadTools(server, brainDir);
 
   // Register resources

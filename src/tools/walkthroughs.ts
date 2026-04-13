@@ -1,0 +1,151 @@
+import { join } from "node:path";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import {
+  readMarkdown,
+  writeMarkdown,
+  listMarkdownFiles,
+  pathExists,
+  ensureDir,
+  slugify,
+  today,
+} from "../brain.js";
+
+export function registerWalkthroughTools(server: McpServer, brainDir: string): void {
+  const walkthroughsDir = (project: string) =>
+    join(brainDir, "projects", project, "walkthroughs");
+
+  // -------------------------------------------------------------------------
+  // list_walkthroughs
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    "list_walkthroughs",
+    {
+      title: "List Walkthroughs",
+      description: "List walkthrough documents for a project.",
+      inputSchema: {
+        project: z.string().describe("Project name."),
+      },
+    },
+    async ({ project }) => {
+      const dir = walkthroughsDir(project);
+      const slugs = await listMarkdownFiles(dir);
+
+      if (slugs.length === 0) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `No walkthroughs found for project "${project}".`,
+            },
+          ],
+        };
+      }
+
+      const summaries: string[] = [];
+
+      for (const slug of slugs) {
+        const filePath = join(dir, `${slug}.md`);
+        const { data } = await readMarkdown(filePath);
+
+        summaries.push(
+          `- **${slug}**: ${data.title || slug}`
+        );
+      }
+
+      return {
+        content: [{ type: "text" as const, text: summaries.join("\n") }],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // get_walkthrough
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    "get_walkthrough",
+    {
+      title: "Get Walkthrough",
+      description: "Get the full content of a specific walkthrough document.",
+      inputSchema: {
+        project: z.string().describe("Project name."),
+        slug: z.string().describe("Walkthrough slug (filename without .md)."),
+      },
+    },
+    async ({ project, slug }) => {
+      const filePath = join(walkthroughsDir(project), `${slug}.md`);
+
+      if (!(await pathExists(filePath))) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Walkthrough "${slug}" not found in project "${project}".`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const { data, content } = await readMarkdown(filePath);
+      const frontmatterLines = Object.entries(data)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join("\n");
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `---\n${frontmatterLines}\n---\n${content}`,
+          },
+        ],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // save_walkthrough
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    "save_walkthrough",
+    {
+      title: "Save Walkthrough",
+      description:
+        "Create or update a walkthrough document. Slug is derived from the title.",
+      inputSchema: {
+        project: z.string().describe("Project name."),
+        title: z.string().describe("Walkthrough title."),
+        body: z.string().describe("Walkthrough body content (markdown)."),
+      },
+    },
+    async ({ project, title, body }) => {
+      const dir = walkthroughsDir(project);
+      await ensureDir(dir);
+
+      const slug = slugify(title);
+      const filePath = join(dir, `${slug}.md`);
+
+      const isUpdate = await pathExists(filePath);
+
+      const data: Record<string, unknown> = {
+        title,
+        updated: today(),
+      };
+
+      if (!isUpdate) {
+        data.created = today();
+      }
+
+      await writeMarkdown(filePath, data, `\n${body}\n`);
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Walkthrough ${isUpdate ? "updated" : "created"}: ${slug} (${title})`,
+          },
+        ],
+      };
+    }
+  );
+}

@@ -107,11 +107,19 @@ The server communicates over stdio (JSON-RPC). MCP clients spawn it automaticall
 ```
 brain/
 ├── README.md
+├── knowledge/                  # Global knowledge items (patterns, guides)
+│   └── architecture.md
 ├── projects/
 │   └── myapp/
 │       ├── context.md          # Current state, decisions, architecture
 │       ├── plans/              # Active implementation plans
 │       │   └── api-redesign.md
+│       ├── tasks/              # Active checklists for execution
+│       │   └── api-redesign.md
+│       ├── walkthroughs/       # Completed walkthroughs and post-mortems
+│       │   └── api-redesign.md
+│       ├── commands/           # Frugal command snippet catalog
+│       │   └── build-docker.md
 │       └── issues/             # Active blockers, bugs
 │           └── docker-build.md
 └── scratchpad.md               # Short-lived cross-session notes
@@ -133,6 +141,18 @@ brain/
 | `list_plans` | List implementation plans |
 | `get_plan` | Get full plan content |
 | `save_plan` | Create or update a plan |
+| `list_tasks` | List task documents |
+| `get_task` | Get full task list content |
+| `save_task` | Create or update a task document |
+| `list_walkthroughs` | List walkthroughs |
+| `get_walkthrough` | Get full walkthrough content |
+| `save_walkthrough` | Create or update a walkthrough |
+| `list_knowledge` | List global knowledge items |
+| `get_knowledge` | Get full knowledge item content |
+| `save_knowledge` | Create or update a knowledge item |
+| `list_commands` | List commands for project |
+| `get_command` | Get full command snippet |
+| `save_command` | Create or update command snippet |
 | `read_scratchpad` | Read scratchpad contents |
 | `append_scratchpad` | Append timestamped note |
 
@@ -142,10 +162,14 @@ Browse brain content via `byobrain://` URIs:
 
 | URI | Content |
 |-----|---------|
+| `byobrain://knowledge` | Knowledge index |
 | `byobrain://projects` | Project list |
 | `byobrain://projects/{name}/context` | Project context |
 | `byobrain://projects/{name}/issues` | Issue index |
 | `byobrain://projects/{name}/plans` | Plan index |
+| `byobrain://projects/{name}/tasks` | Task index |
+| `byobrain://projects/{name}/walkthroughs`| Walkthrough index |
+| `byobrain://projects/{name}/commands` | Commands index |
 | `byobrain://scratchpad` | Scratchpad |
 
 ## Prompts
