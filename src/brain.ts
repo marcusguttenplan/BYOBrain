@@ -326,3 +326,30 @@ export async function findByTitle(
   }
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// Security / Scope Enforcement
+// ---------------------------------------------------------------------------
+
+/**
+ * Enforce that the requested project matches the locked project scope.
+ * Returns an error object for the MCP server if violated, or null if valid.
+ */
+export function enforceProjectScope(
+  requestedProject: string,
+  lockedProject: string | null
+): { content: { type: "text"; text: string }[]; isError: true } | null {
+  if (lockedProject && requestedProject !== lockedProject) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Security Violation: MCP server is locked to project '${lockedProject}'. Cannot access project '${requestedProject}'.`,
+        },
+      ],
+      isError: true,
+    };
+  }
+  return null;
+}
+

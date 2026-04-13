@@ -11,9 +11,10 @@ import {
   timestampedSlug,
   findByTitle,
   now,
+  enforceProjectScope,
 } from "../brain.js";
 
-export function registerTaskTools(server: McpServer, brainDir: string): void {
+export function registerTaskTools(server: McpServer, brainDir: string, lockedProject: string | null): void {
   const tasksDir = (project: string) =>
     join(brainDir, "projects", project, "tasks");
 
@@ -34,6 +35,9 @@ export function registerTaskTools(server: McpServer, brainDir: string): void {
       },
     },
     async ({ project, status }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const dir = tasksDir(project);
       const slugs = await listMarkdownFiles(dir);
 
@@ -94,6 +98,9 @@ export function registerTaskTools(server: McpServer, brainDir: string): void {
       },
     },
     async ({ project, slug }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const filePath = join(tasksDir(project), `${slug}.md`);
 
       if (!(await pathExists(filePath))) {
@@ -144,6 +151,9 @@ export function registerTaskTools(server: McpServer, brainDir: string): void {
       },
     },
     async ({ project, title, body, status }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const dir = tasksDir(project);
       await ensureDir(dir);
 

@@ -3,7 +3,7 @@
 import { join } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { resolveBrainDirAsync } from "./brain.js";
+import { resolveBrainDirAsync, parseBrainMd } from "./brain.js";
 import { registerInitTools } from "./tools/init.js";
 import { registerContextTools } from "./tools/context.js";
 import { registerIssueTools } from "./tools/issues.js";
@@ -31,20 +31,31 @@ async function main(): Promise<void> {
 
   console.error(`BYOBrain MCP server starting (brain: ${brainDir})`);
 
+  let lockedProject: string | null = null;
+  try {
+    const config = await parseBrainMd(join(process.cwd(), "BRAIN.md"));
+    if (config) {
+      lockedProject = config.project;
+      console.error(`MCP locked to project: ${lockedProject}`);
+    }
+  } catch (err) {
+    // No BRAIN.md or invalid, ignore
+  }
+
   // Create MCP server
   const server = new McpServer({
     name: "byobrain-mcp",
-    version: "0.2.0",
+    version: "0.2.8",
   });
 
   // Register all tools
-  registerInitTools(server, brainDir);
-  registerContextTools(server, brainDir);
-  registerIssueTools(server, brainDir);
-  registerPlanTools(server, brainDir);
-  registerTaskTools(server, brainDir);
-  registerWalkthroughTools(server, brainDir);
-  registerCommandTools(server, brainDir);
+  registerInitTools(server, brainDir, lockedProject);
+  registerContextTools(server, brainDir, lockedProject);
+  registerIssueTools(server, brainDir, lockedProject);
+  registerPlanTools(server, brainDir, lockedProject);
+  registerTaskTools(server, brainDir, lockedProject);
+  registerWalkthroughTools(server, brainDir, lockedProject);
+  registerCommandTools(server, brainDir, lockedProject);
   registerKnowledgeTools(server, brainDir);
   registerScratchpadTools(server, brainDir);
 

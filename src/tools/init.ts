@@ -8,6 +8,7 @@ import {
     readMarkdown,
     pathExists,
     now,
+    enforceProjectScope,
 } from "../brain.js";
 
 const BRAIN_README_CONTENT = `# Brain — Working Memory Layer
@@ -43,7 +44,7 @@ const CONTEXT_TEMPLATE = (project: string) => `# ${project} — Context
 ## Architecture Quick Ref
 `;
 
-export function registerInitTools(server: McpServer, brainDir: string): void {
+export function registerInitTools(server: McpServer, brainDir: string, lockedProject: string | null): void {
     // -------------------------------------------------------------------------
     // init_brain
     // -------------------------------------------------------------------------
@@ -112,6 +113,9 @@ export function registerInitTools(server: McpServer, brainDir: string): void {
             },
         },
         async ({ project }) => {
+            const scopeError = enforceProjectScope(project, lockedProject);
+            if (scopeError) return scopeError;
+
             const projectDir = join(brainDir, "projects", project);
 
             await ensureDir(join(projectDir, "plans"));
@@ -159,6 +163,9 @@ export function registerInitTools(server: McpServer, brainDir: string): void {
             },
         },
         async ({ project, repo_path }) => {
+            const scopeError = enforceProjectScope(project, lockedProject);
+            if (scopeError) return scopeError;
+
             const created: string[] = [];
 
             // --- BRAIN.md ---
@@ -273,6 +280,7 @@ export function registerInitTools(server: McpServer, brainDir: string): void {
                     "",
                     "## Rules (Frugal Token Policy)",
                     "",
+                    "- **Strict Scoping**: Scope all tasks, plans, and context exclusively to the `project` declared in `BRAIN.md`. Do not cross-pollinate with other projects appearing in conversation history.",
                     "- **Telegraphic**: Omit pleasantries. Use abbreviations.",
                     "- **Offload**: Never inline large logs. Save to scratchpad/KIs, reference by path.",
                     "- **Size Limits**: context.md under 200 lines. Prune resolved items.",

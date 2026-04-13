@@ -11,9 +11,10 @@ import {
   timestampedSlug,
   findByTitle,
   now,
+  enforceProjectScope,
 } from "../brain.js";
 
-export function registerWalkthroughTools(server: McpServer, brainDir: string): void {
+export function registerWalkthroughTools(server: McpServer, brainDir: string, lockedProject: string | null): void {
   const walkthroughsDir = (project: string) =>
     join(brainDir, "projects", project, "walkthroughs");
 
@@ -30,6 +31,9 @@ export function registerWalkthroughTools(server: McpServer, brainDir: string): v
       },
     },
     async ({ project }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const dir = walkthroughsDir(project);
       const slugs = await listMarkdownFiles(dir);
 
@@ -75,6 +79,9 @@ export function registerWalkthroughTools(server: McpServer, brainDir: string): v
       },
     },
     async ({ project, slug }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const filePath = join(walkthroughsDir(project), `${slug}.md`);
 
       if (!(await pathExists(filePath))) {
@@ -121,6 +128,9 @@ export function registerWalkthroughTools(server: McpServer, brainDir: string): v
       },
     },
     async ({ project, title, body }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const dir = walkthroughsDir(project);
       await ensureDir(dir);
 

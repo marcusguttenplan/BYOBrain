@@ -9,9 +9,10 @@ import {
   ensureDir,
   timestampedSlug,
   now,
+  enforceProjectScope,
 } from "../brain.js";
 
-export function registerIssueTools(server: McpServer, brainDir: string): void {
+export function registerIssueTools(server: McpServer, brainDir: string, lockedProject: string | null): void {
   const issuesDir = (project: string) =>
     join(brainDir, "projects", project, "issues");
 
@@ -38,6 +39,9 @@ export function registerIssueTools(server: McpServer, brainDir: string): void {
       },
     },
     async ({ project, status, include_resolved }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const dir = issuesDir(project);
       const slugs = await listMarkdownFiles(dir);
 
@@ -116,6 +120,9 @@ export function registerIssueTools(server: McpServer, brainDir: string): void {
       },
     },
     async ({ project, slug }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const filePath = join(issuesDir(project), `${slug}.md`);
 
       if (!(await pathExists(filePath))) {
@@ -166,6 +173,9 @@ export function registerIssueTools(server: McpServer, brainDir: string): void {
       },
     },
     async ({ project, title, body, severity }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const dir = issuesDir(project);
       await ensureDir(dir);
 
@@ -214,6 +224,9 @@ export function registerIssueTools(server: McpServer, brainDir: string): void {
       },
     },
     async ({ project, slug, resolution }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const filePath = join(issuesDir(project), `${slug}.md`);
 
       if (!(await pathExists(filePath))) {
