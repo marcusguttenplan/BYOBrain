@@ -65,6 +65,7 @@ export function registerInitTools(server: McpServer, brainDir: string): void {
       const targetDir = path || brainDir;
 
       await ensureDir(join(targetDir, "projects"));
+      await ensureDir(join(targetDir, "knowledge"));
 
       // Write README if it doesn't exist
       const readmePath = join(targetDir, "README.md");
@@ -90,7 +91,7 @@ export function registerInitTools(server: McpServer, brainDir: string): void {
         content: [
           {
             type: "text" as const,
-            text: `Brain initialized at ${targetDir}\n\nCreated:\n- README.md\n- projects/\n- scratchpad.md`,
+            text: `Brain initialized at ${targetDir}\n\nCreated:\n- README.md\n- projects/\n- knowledge/\n- scratchpad.md`,
           },
         ],
       };
@@ -115,6 +116,9 @@ export function registerInitTools(server: McpServer, brainDir: string): void {
 
       await ensureDir(join(projectDir, "plans"));
       await ensureDir(join(projectDir, "issues"));
+      await ensureDir(join(projectDir, "tasks"));
+      await ensureDir(join(projectDir, "walkthroughs"));
+      await ensureDir(join(projectDir, "commands"));
 
       // Write context.md if it doesn't exist
       const contextPath = join(projectDir, "context.md");
@@ -130,7 +134,7 @@ export function registerInitTools(server: McpServer, brainDir: string): void {
         content: [
           {
             type: "text" as const,
-            text: `Project "${project}" initialized at ${projectDir}\n\nCreated:\n- context.md\n- plans/\n- issues/`,
+            text: `Project "${project}" initialized at ${projectDir}\n\nCreated:\n- context.md\n- plans/\n- issues/\n- tasks/\n- walkthroughs/\n- commands/`,
           },
         ],
       };
