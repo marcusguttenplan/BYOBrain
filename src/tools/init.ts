@@ -167,10 +167,14 @@ export function registerInitTools(server: McpServer, brainDir: string): void {
       await writeFile(join(repo_path, "BRAIN.md"), brainMdContent, "utf-8");
       created.push("BRAIN.md");
 
-      // --- Agent instructions template ---
-      const agentInstructions = (agentName: string) =>
+      // --- Agent instructions (delimited section) ---
+      const BRAIN_SECTION_START = "<!-- BYOBRAIN:START -->";
+      const BRAIN_SECTION_END = "<!-- BYOBRAIN:END -->";
+
+      const brainSection = (agentName: string) =>
         [
-          `# ${agentName} Agent Instructions — ${project}`,
+          BRAIN_SECTION_START,
+          `# ${agentName} Agent Instructions — BYOBrain`,
           "",
           "## On Conversation Start",
           "",
@@ -201,24 +205,64 @@ export function registerInitTools(server: McpServer, brainDir: string): void {
           `brain_dir: ${brainDir}`,
           `project: ${project}`,
           "```",
+          BRAIN_SECTION_END,
           "",
         ].join("\n");
 
+      /**
+       * Write or update the brain section in an agent file.
+       * - If file doesn't exist: create with brain section only.
+       * - If file exists without markers: prepend brain section.
+       * - If file exists with markers: replace only the brain section.
+       */
+      async function upsertAgentFile(
+        filePath: string,
+        agentName: string
+      ): Promise<string> {
+        const section = brainSection(agentName);
+        let existing = "";
+        try {
+          existing = await readFile(filePath, "utf-8");
+        } catch {
+          // File doesn't exist — create fresh
+          await writeFile(filePath, section, "utf-8");
+          return "created";
+        }
+
+        if (
+          existing.includes(BRAIN_SECTION_START) &&
+          existing.includes(BRAIN_SECTION_END)
+        ) {
+          // Replace existing brain section
+          const before = existing.substring(
+            0,
+            existing.indexOf(BRAIN_SECTION_START)
+          );
+          const after = existing.substring(
+            existing.indexOf(BRAIN_SECTION_END) + BRAIN_SECTION_END.length
+          );
+          await writeFile(filePath, before + section + after.trimStart(), "utf-8");
+          return "updated";
+        }
+
+        // Prepend brain section to existing content
+        await writeFile(filePath, section + "\n" + existing, "utf-8");
+        return "prepended";
+      }
+
       // --- CLAUDE.md ---
-      await writeFile(
+      const claudeAction = await upsertAgentFile(
         join(repo_path, "CLAUDE.md"),
-        agentInstructions("Claude"),
-        "utf-8"
+        "Claude"
       );
-      created.push("CLAUDE.md");
+      created.push(`CLAUDE.md (${claudeAction})`);
 
       // --- GEMINI.md ---
-      await writeFile(
+      const geminiAction = await upsertAgentFile(
         join(repo_path, "GEMINI.md"),
-        agentInstructions("Gemini"),
-        "utf-8"
+        "Gemini"
       );
-      created.push("GEMINI.md");
+      created.push(`GEMINI.md (${geminiAction})`);
 
       // --- Append to .gitignore if needed ---
       const gitignorePath = join(repo_path, ".gitignore");
