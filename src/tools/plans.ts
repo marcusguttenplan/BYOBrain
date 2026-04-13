@@ -130,18 +130,27 @@ export function registerPlanTools(server: McpServer, brainDir: string): void {
     {
       title: "Save Plan",
       description:
-        "Create or update an implementation plan. Slug is derived from the title.",
+        "Create or update an implementation plan. Plans should be full-fidelity " +
+        "copies of the agreed Implementation Plan — no size limit. On update, " +
+        "provide a revision_comment to append to the running revision log.",
       inputSchema: {
         project: z.string().describe("Project name."),
         title: z.string().describe("Plan title."),
-        body: z.string().describe("Plan body content (markdown)."),
+        body: z.string().describe("Plan body content (markdown). Should exactly match the agreed-upon Implementation Plan."),
         status: z
           .enum(["draft", "active", "completed", "abandoned"])
           .optional()
           .describe("Plan status. Defaults to 'active'."),
+        revision_comment: z
+          .string()
+          .optional()
+          .describe(
+            "Revision comment describing what changed and why. " +
+            "Appended with UTC timestamp to the Revision Log section."
+          ),
       },
     },
-    async ({ project, title, body, status }) => {
+    async ({ project, title, body, status, revision_comment }) => {
       const dir = plansDir(project);
       await ensureDir(dir);
 
@@ -160,7 +169,40 @@ export function registerPlanTools(server: McpServer, brainDir: string): void {
         data.created = now();
       }
 
-      await writeMarkdown(filePath, data, `\n${body}\n`);
+      // Build the final body, appending revision log if needed
+      let finalBody = `\n${body}\n`;
+
+      if (isUpdate && revision_comment) {
+        // Read existing revision log from the current file
+        const existing = await readMarkdown(filePath);
+        const existingContent = existing.content;
+
+        // Extract existing revision log entries
+        const revLogMarker = "## Revision Log";
+        const revLogIdx = existingContent.indexOf(revLogMarker);
+        let existingRevLog = "";
+        if (revLogIdx !== -1) {
+          existingRevLog = existingContent
+            .substring(revLogIdx + revLogMarker.length)
+            .trim();
+        }
+
+        // Build new revision log
+        const timestamp = now();
+        const newEntry = `- **${timestamp}**: ${revision_comment}`;
+        const revisionLog = existingRevLog
+          ? `${existingRevLog}\n${newEntry}`
+          : newEntry;
+
+        finalBody = `\n${body}\n\n## Revision Log\n\n${revisionLog}\n`;
+      } else if (!isUpdate && revision_comment) {
+        // New plan with an initial comment
+        const timestamp = now();
+        const newEntry = `- **${timestamp}**: ${revision_comment}`;
+        finalBody = `\n${body}\n\n## Revision Log\n\n${newEntry}\n`;
+      }
+
+      await writeMarkdown(filePath, data, finalBody);
 
       return {
         content: [
