@@ -2,3 +2,10 @@
 BRAIN.md
 CLAUDE.md
 GEMINI.md
+.agent_state
+
+# Generated files
+node_modules/
+build/
+coverage/
+.DS_Store

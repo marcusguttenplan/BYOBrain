@@ -125,6 +125,17 @@ brain/
 └── scratchpad.md               # Short-lived cross-session notes
 ```
 
+## Workflows & State Machine
+
+BYOBrain enforces a strict **State Machine** to ensure high-quality development practices (similar to the Antigravity/SDBP protocol). Tools are "locked" based on the current project phase.
+
+- **Research**: Default state. Gather context, explore code, and list issues.
+- **Planning**: Create implementation plans. `save_plan` is enabled here.
+- **Execution**: Move tasks from plans to active work. `save_task` is enabled.
+- **Verification**: Verify work before completion. `save_walkthrough` is enabled.
+
+Use `get_agent_state` and `set_agent_state` to manage transitions. Project isolation is strictly enforced; an agent cannot mutate a state in Project A while locked to Project B.
+
 ## Tools
 
 | Tool | Description |

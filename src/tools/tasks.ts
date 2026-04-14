@@ -13,6 +13,7 @@ import {
   now,
   enforceProjectScope,
 } from "../brain.js";
+import { requireAgentState } from "./state.js";
 
 export function registerTaskTools(server: McpServer, brainDir: string, lockedProject: string | null): void {
   const tasksDir = (project: string) =>
@@ -153,6 +154,9 @@ export function registerTaskTools(server: McpServer, brainDir: string, lockedPro
     async ({ project, title, body, status }) => {
       const scopeError = enforceProjectScope(project, lockedProject);
       if (scopeError) return scopeError;
+
+      // Ensure agent is in the execution phase to mutate tasks.
+      await requireAgentState(brainDir, project, "execution");
 
       const dir = tasksDir(project);
       await ensureDir(dir);

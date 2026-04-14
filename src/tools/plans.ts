@@ -13,6 +13,7 @@ import {
   now,
   enforceProjectScope,
 } from "../brain.js";
+import { requireAgentState } from "./state.js";
 
 export function registerPlanTools(server: McpServer, brainDir: string, lockedProject: string | null): void {
   const plansDir = (project: string) =>
@@ -162,6 +163,13 @@ export function registerPlanTools(server: McpServer, brainDir: string, lockedPro
     async ({ project, title, body, status, revision_comment }) => {
       const scopeError = enforceProjectScope(project, lockedProject);
       if (scopeError) return scopeError;
+
+      // Agent must be in planning or execution
+      await requireAgentState(brainDir, project, ["planning", "execution"]);
+
+      if (!body.includes("## Verification Plan")) {
+        throw new Error("Validation Error: Implementation plans MUST contain a '## Verification Plan' section.");
+      }
 
       const dir = plansDir(project);
       await ensureDir(dir);

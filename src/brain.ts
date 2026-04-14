@@ -181,8 +181,8 @@ export async function listMarkdownFiles(dirPath: string): Promise<string[]> {
   try {
     const entries = await readdir(dirPath);
     return entries
-      .filter((f) => f.endsWith(".md"))
-      .map((f) => f.replace(/\.md$/, ""));
+      .filter((f) => f.toLowerCase().endsWith(".md"))
+      .map((f) => f.replace(/\.md$/i, ""));
   } catch {
     return [];
   }
