@@ -21,7 +21,7 @@ export function registerKnowledgeTools(server: McpServer, brainDir: string): voi
     "list_knowledge",
     {
       title: "List Knowledge Items",
-      description: "List all global knowledge items (KIs) documented in the brain.",
+      description: "List all global knowledge items (KIs) documented in the brain. Optimized for agy native viewing.",
       inputSchema: {
         // Optional filters could be added later
       },
@@ -65,7 +65,7 @@ export function registerKnowledgeTools(server: McpServer, brainDir: string): voi
     "get_knowledge",
     {
       title: "Get Knowledge Item",
-      description: "Get the full content of a specific knowledge item.",
+      description: "Get the full content of a specific knowledge item. Optimized for agy native viewing. Offload content to the Antigravity file viewer where possible.",
       inputSchema: {
         slug: z.string().describe("Knowledge item slug (filename without .md)."),
       },
@@ -108,7 +108,7 @@ export function registerKnowledgeTools(server: McpServer, brainDir: string): voi
     "save_knowledge",
     {
       title: "Save Knowledge Item",
-      description: "Create or update a knowledge item (KI). Slug is derived from the title.",
+      description: "Create or update a knowledge item (KI). Slug is derived from the title. Optimized for agy native viewing.",
       inputSchema: {
         title: z.string().describe("Knowledge item title."),
         summary: z.string().describe("A short summary of what this knowledge item explains or resolves."),

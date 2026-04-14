@@ -191,6 +191,8 @@ export function registerInitTools(server: McpServer, brainDir: string, lockedPro
                     "- **Zero Prose**: Chat responses must be links to artifacts or bulleted facts.",
                     "- **Fact-Only Context**: \`context.md\` should be a condensed index, not a narrative.",
                     "- **Offloading**: Never inline logs or large diffs; use the scratchpad or KIs.",
+                    "- **Native Viewing**: Prioritize `view_file` (for AGV) and dashboard links. Use Antigravity-native viewers for all research and verification summaries.",
+                    "- **Deep Linking**: Use the `byobrain://` protocol for all dashboard links presented to the user.",
                     "",
                     "## The Quad Workflow (State Machine)",
                     "You are restricted by a strict State Machine. You must execute your tasks following these phases exactly.",

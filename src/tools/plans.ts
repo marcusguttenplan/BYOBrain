@@ -26,7 +26,7 @@ export function registerPlanTools(server: McpServer, brainDir: string, lockedPro
     "list_plans",
     {
       title: "List Plans",
-      description: "List implementation plans for a project.",
+      description: "List implementation plans for a project. Optimized for agy native viewing.",
       inputSchema: {
         project: z.string().describe("Project name."),
         status: z
@@ -92,7 +92,7 @@ export function registerPlanTools(server: McpServer, brainDir: string, lockedPro
     "get_plan",
     {
       title: "Get Plan",
-      description: "Get the full content of a specific implementation plan.",
+      description: "Get the full content of a specific implementation plan. Optimized for agy native viewing. Offload content to the Antigravity file viewer where possible.",
       inputSchema: {
         project: z.string().describe("Project name."),
         slug: z.string().describe("Plan slug (filename without .md)."),
@@ -142,7 +142,8 @@ export function registerPlanTools(server: McpServer, brainDir: string, lockedPro
       description:
         "Create or update an implementation plan. Plans should be full-fidelity " +
         "copies of the agreed Implementation Plan — no size limit. On update, " +
-        "provide a revision_comment to append to the running revision log.",
+        "provide a revision_comment to append to the running revision log. " +
+        "Optimized for agy native viewing.",
       inputSchema: {
         project: z.string().describe("Project name."),
         title: z.string().describe("Plan title."),
