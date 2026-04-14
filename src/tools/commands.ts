@@ -9,9 +9,10 @@ import {
   ensureDir,
   slugify,
   now,
+  enforceProjectScope,
 } from "../brain.js";
 
-export function registerCommandTools(server: McpServer, brainDir: string): void {
+export function registerCommandTools(server: McpServer, brainDir: string, lockedProject: string | null): void {
   const commandsDir = (project: string) =>
     join(brainDir, "projects", project, "commands");
 
@@ -28,6 +29,9 @@ export function registerCommandTools(server: McpServer, brainDir: string): void 
       },
     },
     async ({ project }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const dir = commandsDir(project);
       const slugs = await listMarkdownFiles(dir);
 
@@ -65,6 +69,9 @@ export function registerCommandTools(server: McpServer, brainDir: string): void 
       },
     },
     async ({ project, slug }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const filePath = join(commandsDir(project), `${slug}.md`);
 
       if (!(await pathExists(filePath))) {
@@ -97,6 +104,9 @@ export function registerCommandTools(server: McpServer, brainDir: string): void 
       },
     },
     async ({ project, title, command_string }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const dir = commandsDir(project);
       await ensureDir(dir);
 

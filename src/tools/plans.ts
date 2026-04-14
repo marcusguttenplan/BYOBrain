@@ -11,9 +11,10 @@ import {
   timestampedSlug,
   findByTitle,
   now,
+  enforceProjectScope,
 } from "../brain.js";
 
-export function registerPlanTools(server: McpServer, brainDir: string): void {
+export function registerPlanTools(server: McpServer, brainDir: string, lockedProject: string | null): void {
   const plansDir = (project: string) =>
     join(brainDir, "projects", project, "plans");
 
@@ -34,6 +35,9 @@ export function registerPlanTools(server: McpServer, brainDir: string): void {
       },
     },
     async ({ project, status }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const dir = plansDir(project);
       const slugs = await listMarkdownFiles(dir);
 
@@ -94,6 +98,9 @@ export function registerPlanTools(server: McpServer, brainDir: string): void {
       },
     },
     async ({ project, slug }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const filePath = join(plansDir(project), `${slug}.md`);
 
       if (!(await pathExists(filePath))) {
@@ -153,6 +160,9 @@ export function registerPlanTools(server: McpServer, brainDir: string): void {
       },
     },
     async ({ project, title, body, status, revision_comment }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const dir = plansDir(project);
       await ensureDir(dir);
 

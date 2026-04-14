@@ -7,11 +7,13 @@ import {
   mergeContextSections,
   pathExists,
   now,
+  enforceProjectScope,
 } from "../brain.js";
 
 export function registerContextTools(
   server: McpServer,
-  brainDir: string
+  brainDir: string,
+  lockedProject: string | null
 ): void {
   // -------------------------------------------------------------------------
   // read_context
@@ -27,6 +29,9 @@ export function registerContextTools(
       },
     },
     async ({ project }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const contextPath = join(brainDir, "projects", project, "context.md");
 
       if (!(await pathExists(contextPath))) {
@@ -81,6 +86,9 @@ export function registerContextTools(
       },
     },
     async ({ project, updates }) => {
+      const scopeError = enforceProjectScope(project, lockedProject);
+      if (scopeError) return scopeError;
+
       const contextPath = join(brainDir, "projects", project, "context.md");
 
       if (!(await pathExists(contextPath))) {
