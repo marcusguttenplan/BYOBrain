@@ -3,56 +3,86 @@
 [![npm version](https://img.shields.io/npm/v/byobrain-mcp.svg)](https://www.npmjs.com/package/byobrain-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-**Persistent cross-agent working memory via MCP.**
+**Persistent cross-agent working memory and spec-driven SDLC via MCP.**
 
-An [MCP](https://modelcontextprotocol.io) server that gives any AI coding agent persistent, structured working memory. You supply a brain directory; BYOBrain manages context, plans, and issues across conversations, agents, and IDEs.
+An [MCP](https://modelcontextprotocol.io) server that gives any AI coding agent persistent, structured working memory, enforces a four-phase development workflow, and maintains a local knowledge graph. You supply a brain directory; BYOBrain handles the rest.
 
 ```bash
 npx byobrain-mcp
 ```
 
+---
+
 ## Why
 
-Every new AI conversation starts cold. You re-explain your project, your stack, your current blockers. Insights from one agent are invisible to another. There's no shared memory layer.
+Every new AI conversation starts cold. You re-explain your project, your stack, your current blockers. Insights from one agent are invisible to another. Agents skip planning, hallucinate that specs exist, and drift from agreed-upon approaches.
 
-BYOBrain fixes this. One brain directory. Any MCP-compatible agent reads it at conversation start, writes to it at conversation end.
+BYOBrain fixes the memory and discipline problems:
 
-- **BYO** — you own your data. Plain markdown files on your filesystem.
-- **Agent-agnostic** — works with any MCP client (Claude Desktop, Claude Code, Cursor, Windsurf, Gemini).
-- **Human-readable** — brain files are markdown. Open them in Obsidian, VS Code, or `cat` them.
-- **Zero infrastructure** — no database, no server process, no auth. Just files.
+- **Persistent memory** — one brain directory shared across all agents, sessions, and IDEs
+- **Spec-driven SDLC** — a four-phase state machine (research → plan → execute → verify) enforced at the tool layer, not by prompt
+- **Human-readable** — plain markdown files; open in Obsidian, VS Code, or `cat`
+- **Agent-agnostic** — any MCP-compatible IDE (Claude Desktop, Claude Code, Cursor, Windsurf, Antigravity)
+- **Zero infrastructure** — no server, no database, no auth in standalone mode
+
+---
+
+## Part of the Packmule Stack
+
+BYOBrain is the **brain** — the reasoning and memory layer. It operates standalone or as part of the Packmule harness:
+
+```
+saddlebag → packmule → byobrain → campfire / IDE
+(credentials,         (memory,     (dashboard)
+ gateway, IAM)         SDLC)
+```
+
+| Mode | What You Get |
+|---|---|
+| **Standalone** | Persistent memory, SDLC enforcement, local knowledge graph, Campfire dashboard |
+| **With Saddlebag** | + Model routing, cost control, IAM, OS-level sandbox |
+| **Full Packmule** | + Team collaboration, brain federation, Linear integration, presence, Cedar file locks |
+
+---
 
 ## Quick Start
 
-### 1. Configure your MCP client
+### 1. Configure your IDE
 
 **Claude Desktop / Claude Code** (`~/.claude/claude_desktop_config.json`):
-
 ```json
 {
   "mcpServers": {
     "byobrain": {
       "command": "npx",
       "args": ["-y", "byobrain-mcp"],
-      "env": {
-        "BRAIN_DIR": "/path/to/your/brain"
-      }
+      "env": { "BRAIN_DIR": "/path/to/your/brain" }
     }
   }
 }
 ```
 
 **Cursor** (`.cursor/mcp.json`):
-
 ```json
 {
   "mcpServers": {
     "byobrain": {
       "command": "npx",
       "args": ["-y", "byobrain-mcp"],
-      "env": {
-        "BRAIN_DIR": "/path/to/your/brain"
-      }
+      "env": { "BRAIN_DIR": "/path/to/your/brain" }
+    }
+  }
+}
+```
+
+**Antigravity** (`~/.gemini/config.json`):
+```json
+{
+  "mcpServers": {
+    "byobrain": {
+      "command": "npx",
+      "args": ["-y", "byobrain-mcp"],
+      "env": { "BRAIN_DIR": "/path/to/your/brain" }
     }
   }
 }
@@ -60,200 +90,158 @@ BYOBrain fixes this. One brain directory. Any MCP-compatible agent reads it at c
 
 ### 2. Bootstrap a project
 
-Use the `bootstrap` prompt or run manually:
-
 ```
 > init_brain
 > init_project({ project: "myapp" })
 > link_repo({ project: "myapp", repo_path: "/path/to/myapp" })
 ```
 
+`link_repo` creates a `BRAIN.md` at the repo root and writes tailored agent instruction files (`CLAUDE.md`, `GEMINI.md`) that enforce the brain protocol.
+
 ### 3. Work normally
 
-Your agent reads context at conversation start and updates it at conversation end.
+Your agent reads context at conversation start, follows the SDLC state machine, and updates the brain at the end of each session.
 
-## Usage
+---
 
-### Test locally with MCP Inspector
+## SDLC State Machine
 
-```bash
-# Clone and build
-git clone https://github.com/marcusguttenplan/byobrain-mcp
-cd byobrain-mcp
-npm install
-npm run build
+BYOBrain enforces a strict four-phase workflow per project:
 
-# Start the MCP Inspector (opens browser UI)
-BRAIN_DIR=/path/to/your/brain npm run inspect
+```
+research ──► planning ──► execution ──► verification
+                              ↑               │
+                              └───────────────┘ (iterate)
 ```
 
-The Inspector lets you browse tools, call them interactively, and verify resources — all before configuring any client.
+| Phase | State | What You Do | Locked Tools |
+|---|---|---|---|
+| **Research** | `research` | Explore, read context, check knowledge | Mutation tools locked |
+| **Plan** | `planning` | Write implementation plan; wait for human approval | `save_task`, `save_walkthrough` |
+| **Execute** | `execution` | Implement; update task checklist turn-by-turn | `save_plan` |
+| **Verify** | `verification` | Test, lint, validate; write walkthrough | — |
 
-### Run directly
+Attempting to use a locked tool returns a **State Lock error** — not a suggestion, an error.
 
-```bash
-# Via npx (no install needed)
-BRAIN_DIR=/path/to/your/brain npx byobrain-mcp
+---
 
-# Or after global install
-npm install -g byobrain-mcp
-BRAIN_DIR=/path/to/your/brain byobrain-mcp
-```
-
-The server communicates over stdio (JSON-RPC). MCP clients spawn it automatically — you typically don't need to run it manually.
-
-## Brain Directory Structure
+## Brain Directory
 
 ```
 brain/
-├── README.md
-├── knowledge/                  # Global knowledge items (patterns, guides)
-│   └── architecture.md
-├── projects/
-│   └── myapp/
-│       ├── context.md          # Current state, decisions, architecture
-│       ├── plans/              # Active implementation plans
-│       │   └── api-redesign.md
-│       ├── tasks/              # Active checklists for execution
-│       │   └── api-redesign.md
-│       ├── walkthroughs/       # Completed walkthroughs and post-mortems
-│       │   └── api-redesign.md
-│       ├── commands/           # Frugal command snippet catalog
-│       │   └── build-docker.md
-│       └── issues/             # Active blockers, bugs
-│           └── docker-build.md
-└── scratchpad.md               # Short-lived cross-session notes
+├── scratchpad.md
+├── knowledge/
+│   └── {YYYY-MM-DD-HHmmss-slug}.md
+└── projects/
+    └── {project}/
+        ├── context.md
+        ├── .agent_state
+        ├── plans/
+        ├── tasks/
+        ├── walkthroughs/
+        ├── commands/
+        └── issues/
 ```
 
-## Workflows & State Machine
+All files are plain markdown with YAML frontmatter. Artifacts are named `YYYY-MM-DD-HHmmss-{slug}.md` for chronological sorting and deduplication.
 
-BYOBrain enforces a strict **State Machine** to ensure high-quality development practices (similar to the Antigravity/SDBP protocol). Tools are "locked" based on the current project phase.
-
-- **Research**: Default state. Gather context, explore code, and list issues.
-- **Planning**: Create implementation plans. `save_plan` is enabled here.
-- **Execution**: Move tasks from plans to active work. `save_task` is enabled.
-- **Verification**: Verify work before completion. `save_walkthrough` is enabled.
-
-Use `get_agent_state` and `set_agent_state` to manage transitions. Project isolation is strictly enforced; an agent cannot mutate a state in Project A while locked to Project B.
+---
 
 ## Tools
 
-| Tool | Description |
-|------|-------------|
-| `init_brain` | Create brain directory structure |
-| `init_project` | Create a project with context.md, plans/, issues/ |
-| `link_repo` | Link repo to brain (creates BRAIN.md and agent instructions) |
-| `read_context` | Read a project's context.md |
-| `update_context` | Section-level merge into context.md |
-| `list_issues` | List issues (skips resolved by default) |
-| `get_issue` | Get full issue content |
-| `create_issue` | Create an issue with frontmatter |
-| `resolve_issue` | Mark issue resolved with notes |
-| `list_plans` | List implementation plans |
-| `get_plan` | Get full plan content |
-| `save_plan` | Create or update a plan |
-| `list_tasks` | List task documents |
-| `get_task` | Get full task list content |
-| `save_task` | Create or update a task document |
-| `list_walkthroughs` | List walkthroughs |
-| `get_walkthrough` | Get full walkthrough content |
-| `save_walkthrough` | Create or update a walkthrough |
-| `list_knowledge` | List global knowledge items |
-| `get_knowledge` | Get full knowledge item content |
-| `save_knowledge` | Create or update a knowledge item |
-| `list_commands` | List commands for project |
-| `get_command` | Get full command snippet |
-| `save_command` | Create or update command snippet |
-| `read_scratchpad` | Read scratchpad contents |
-| `append_scratchpad` | Append timestamped note |
+| Group | Tools |
+|---|---|
+| Init | `init_brain`, `init_project`, `link_repo` |
+| Context | `read_context`, `update_context` |
+| Issues | `list_issues`, `get_issue`, `create_issue`, `resolve_issue` |
+| Plans | `list_plans`, `get_plan`, `save_plan`, `prune_plans` |
+| Tasks | `list_tasks`, `get_task`, `save_task`, `prune_tasks` |
+| Walkthroughs | `list_walkthroughs`, `get_walkthrough`, `save_walkthrough` |
+| Commands | `list_commands`, `get_command`, `save_command` |
+| Knowledge | `list_knowledge`, `get_knowledge`, `save_knowledge` |
+| Scratchpad | `read_scratchpad`, `append_scratchpad` |
+| State | `get_agent_state`, `set_agent_state` |
+| UI | `get_dashboard_url` |
+
+---
 
 ## Resources
 
 Browse brain content via `byobrain://` URIs:
 
-| URI | Content |
-|-----|---------|
-| `byobrain://knowledge` | Knowledge index |
-| `byobrain://projects` | Project list |
-| `byobrain://projects/{name}/context` | Project context |
-| `byobrain://projects/{name}/issues` | Issue index |
-| `byobrain://projects/{name}/plans` | Plan index |
-| `byobrain://projects/{name}/tasks` | Task index |
-| `byobrain://projects/{name}/walkthroughs`| Walkthrough index |
-| `byobrain://projects/{name}/commands` | Commands index |
-| `byobrain://scratchpad` | Scratchpad |
-
-## Prompts
-
-| Prompt | Description |
-|--------|-------------|
-| `bootstrap` | Guided project setup workflow |
-| `update_brain` | End-of-session brain update workflow |
-
-## Per-Repo Configuration
-
-Link a repo to the brain by placing a `BRAIN.md` at its root:
-
-```yaml
-# BRAIN.md
-brain_dir: /path/to/brain
-project: myapp
+```
+byobrain://projects
+byobrain://projects/{project}/context
+byobrain://projects/{project}/plans[/{slug}]
+byobrain://projects/{project}/tasks[/{slug}]
+byobrain://projects/{project}/walkthroughs[/{slug}]
+byobrain://projects/{project}/issues[/{slug}]
+byobrain://projects/{project}/commands[/{slug}]
+byobrain://knowledge[/{slug}]
+byobrain://scratchpad
 ```
 
-The `link_repo` tool creates this file for you, along with tailored `CLAUDE.md` and `GEMINI.md` agent instructions to strictly enforce the brain's data schemas and frugal write protocols.
+---
 
-`BRAIN.md` fields are validated with a strict schema:
+## Run with Dashboard
 
-| Field | Type | Required | Constraint |
-|-------|------|----------|------------|
-| `brain_dir` | string | ✅ | Non-empty absolute path |
-| `project` | string | ✅ | Alphanumeric with hyphens/underscores |
+```bash
+BRAIN_DIR=/path/to/brain npx byobrain-mcp --ui
+# or: byobrain-mcp --ui --port 3001
 
-Invalid `BRAIN.md` files produce clear error messages at startup.
+# Get URL from agent
+> get_dashboard_url
+```
+
+---
 
 ## Docker
 
-### Build
-
 ```bash
 docker build -t byobrain-mcp .
+docker run -i --rm -v /path/to/brain:/brain byobrain-mcp
 ```
 
-### Run
-
-```bash
-# Mount your brain directory into the container
-docker run -i --rm \
-  -v /path/to/your/brain:/brain \
-  byobrain-mcp
-```
-
-### MCP client config (Docker)
-
+MCP config (Docker):
 ```json
 {
   "mcpServers": {
     "byobrain": {
       "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-v", "/path/to/your/brain:/brain",
-        "byobrain-mcp"
-      ]
+      "args": ["run", "-i", "--rm", "-v", "/path/to/brain:/brain", "byobrain-mcp"]
     }
   }
 }
 ```
 
+---
+
 ## Development
 
 ```bash
 npm install
-npm run build          # Compile TypeScript
-npm run dev            # Watch mode
+npm run build          # tsc → build/
+npm run dev            # watch mode
 npm run inspect        # MCP Inspector (browser UI)
-npm test               # Run tests (vitest)
+npm test               # vitest
+npm run test:coverage  # with v8 coverage
 ```
+
+### Architecture docs
+
+See [`_architecture/`](_architecture/) for detailed design documentation:
+
+| Doc | What |
+|---|---|
+| [README.md](_architecture/README.md) | System overview, runtime model, MCP surface |
+| [identity.md](_architecture/identity.md) | Identity model, JWT claims, policy tiers |
+| [gateway.md](_architecture/gateway.md) | Model gateway, routing, normalization, Ollama |
+| [graph.md](_architecture/graph.md) | Kùzu schema, code graph, knowledge retrieval |
+| [context.md](_architecture/context.md) | Context assembly, block architecture, frugality |
+| [sandbox.md](_architecture/sandbox.md) | Packmule Sandbox, Seatbelt/Landlock, Cedar compilation |
+| [events.md](_architecture/events.md) | CloudEvents schema, event bus, brain federation |
+
+---
 
 ## License
 
