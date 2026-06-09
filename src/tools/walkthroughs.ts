@@ -25,7 +25,7 @@ export function registerWalkthroughTools(server: McpServer, brainDir: string, lo
     "list_walkthroughs",
     {
       title: "List Walkthroughs",
-      description: "List walkthrough documents for a project.",
+      description: "List walkthrough documents for a project. Optimized for agy native viewing.",
       inputSchema: {
         project: z.string().describe("Project name."),
       },
@@ -72,7 +72,7 @@ export function registerWalkthroughTools(server: McpServer, brainDir: string, lo
     "get_walkthrough",
     {
       title: "Get Walkthrough",
-      description: "Get the full content of a specific walkthrough document.",
+      description: "Get the full content of a specific walkthrough document. Optimized for agy native viewing. Offload content to the Antigravity file viewer where possible.",
       inputSchema: {
         project: z.string().describe("Project name."),
         slug: z.string().describe("Walkthrough slug (filename without .md)."),
@@ -120,7 +120,7 @@ export function registerWalkthroughTools(server: McpServer, brainDir: string, lo
     {
       title: "Save Walkthrough",
       description:
-        "Create or update a walkthrough document. Slug is derived from the title.",
+        "Create or update a walkthrough document. Slug is derived from the title. Optimized for agy native viewing.",
       inputSchema: {
         project: z.string().describe("Project name."),
         title: z.string().describe("Walkthrough title."),

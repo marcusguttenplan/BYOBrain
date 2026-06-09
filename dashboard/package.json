@@ -1,0 +1,29 @@
+{
+  "name": "dashboard",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.102",
+    "@iconify-json/simple-icons": "^1.2.78",
+    "@nuxt/ui": "^4.6.1",
+    "marked": "^18.0.0",
+    "nuxt": "^4.4.2",
+    "tailwindcss": "^4.2.2",
+    "yaml": "^2.8.3"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.15.2",
+    "eslint": "^10.2.0",
+    "typescript": "^6.0.2",
+    "vue-tsc": "^3.2.6"
+  },
+  "packageManager": "pnpm@10.33.0"
+}

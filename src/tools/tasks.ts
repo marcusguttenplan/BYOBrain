@@ -26,7 +26,7 @@ export function registerTaskTools(server: McpServer, brainDir: string, lockedPro
     "list_tasks",
     {
       title: "List Tasks",
-      description: "List task documents for a project.",
+      description: "List task documents for a project. Optimized for agy native viewing.",
       inputSchema: {
         project: z.string().describe("Project name."),
         status: z
@@ -92,7 +92,7 @@ export function registerTaskTools(server: McpServer, brainDir: string, lockedPro
     "get_task",
     {
       title: "Get Task",
-      description: "Get the full content of a specific task list.",
+      description: "Get the full content of a specific task list. Optimized for agy native viewing. Offload content to the Antigravity file viewer where possible.",
       inputSchema: {
         project: z.string().describe("Project name."),
         slug: z.string().describe("Task slug (filename without .md)."),
@@ -140,7 +140,7 @@ export function registerTaskTools(server: McpServer, brainDir: string, lockedPro
     {
       title: "Save Task",
       description:
-        "Create or update a task document. Slug is derived from the title.",
+        "Create or update a task document. Slug is derived from the title. Optimized for agy native viewing.",
       inputSchema: {
         project: z.string().describe("Project name."),
         title: z.string().describe("Task title."),

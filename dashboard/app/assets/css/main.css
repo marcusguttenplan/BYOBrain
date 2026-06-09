@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+:root {
+  --bg-color: #020617;
+  --glass-bg: rgba(7, 10, 25, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.04);
+  --glass-blur: blur(24px) saturate(180%);
+  --accent-color: #4f46e5;
+  --accent-hover: #6366f1;
+  --text-primary: #f8fafc;
+  --text-secondary: #64748b;
+  --card-bg: rgba(15, 23, 42, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.12) 0px, transparent 40%),
+    radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.08) 0px, transparent 40%);
+  min-height: 100vh;
+}
+
+/* Glassmorphism Utility */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-hover:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Typography */
+h1, h2, h3, h4 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Markdown Rendering Styles */
+.markdown-body {
+  @apply text-slate-300 leading-relaxed;
+}
+
+.markdown-body h1 { @apply text-2xl font-bold text-white mt-8 mb-4; }
+.markdown-body h2 { @apply text-xl font-bold text-white mt-6 mb-3 border-b border-white/10 pb-2; }
+.markdown-body h3 { @apply text-lg font-bold text-white mt-4 mb-2; }
+
+.markdown-body p { @apply mb-4; }
+
+.markdown-body ul { @apply list-disc list-inside mb-4 space-y-1; }
+.markdown-body ol { @apply list-decimal list-inside mb-4 space-y-1; }
+
+.markdown-body code {
+  @apply bg-white/10 px-1.5 py-0.5 rounded text-indigo-300 font-mono text-sm;
+}
+
+.markdown-body pre {
+  @apply bg-slate-900/50 p-4 rounded-xl border border-white/5 mb-6 overflow-x-auto;
+}
+
+.markdown-body pre code {
+  @apply bg-transparent p-0 text-slate-300;
+}
+
+.markdown-body blockquote {
+  @apply border-l-4 border-indigo-500/50 pl-4 italic text-slate-400 my-6;
+}
+
+.markdown-body a {
+  @apply text-indigo-400 hover:text-indigo-300 underline underline-offset-4 decoration-indigo-500/30;
+}
+
+.markdown-body img {
+  @apply rounded-xl border border-white/10 my-8 max-w-full;
+}
+
+.markdown-body hr {
+  @apply border-white/5 my-8;
+}
+
+/* Task Lists */
+.markdown-body input[type="checkbox"] {
+  @apply mr-2 accent-indigo-500;
+}

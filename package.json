@@ -8,6 +8,7 @@
   },
   "files": [
     "build",
+    "dashboard/.output",
     "README.md"
   ],
   "scripts": {
@@ -36,6 +37,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
+    "get-port": "^7.2.0",
     "yaml": "^2.8.3",
     "zod": "^3.24.0"
   },
